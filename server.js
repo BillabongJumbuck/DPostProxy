@@ -48,10 +48,9 @@ app.use('/api', async (req, res) => {
         }
 
         // 解析目标 URL
-        let targetUrl = targetPath
-        if (!targetPath.startsWith('http')) {
-            targetUrl = `https://www.${targetPath}`
-        }
+        const targetUrl = !targetPath.startsWith('http') 
+            ? `https://www.${targetPath}`
+            : targetPath
 
         logger.info('转发请求', { targetUrl })
 
@@ -100,7 +99,7 @@ app.use('/api', async (req, res) => {
         logger.error('请求失败', {
             error: error.message,
             stack: error.stack,
-            targetUrl: targetUrl
+            url: req.url
         })
         if (error.response) {
             res.status(error.response.status).set(error.response.headers).send(error.response.data)
@@ -123,15 +122,33 @@ app.get('/health', (req, res) => {
     })
 })
 
-// 错误处理
-app.use((err, req, res) => {
+// 全局错误处理中间件
+app.use((err, req, res, next) => {
     logger.error('服务器错误', {
         error: err.message,
-        stack: err.stack
+        stack: err.stack,
+        path: req.path,
+        method: req.method
     })
     res.status(500).json({
         error: '服务器错误',
         message: err.message,
+    })
+})
+
+// 处理未捕获的异常
+process.on('uncaughtException', (error) => {
+    logger.error('未捕获的异常', {
+        error: error.message,
+        stack: error.stack
+    })
+})
+
+// 处理未处理的 Promise 拒绝
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('未处理的 Promise 拒绝', {
+        reason: reason.message,
+        stack: reason.stack
     })
 })
 
