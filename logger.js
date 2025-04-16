@@ -34,8 +34,8 @@ const logger = winston.createLogger({
     ],
 });
 
-// 如果不是生产环境，也输出到控制台
-if (process.env.NODE_ENV !== 'production') {
+// 只有在开发环境下才输出到控制台
+if (process.env.NODE_ENV === 'development') {
     logger.add(new winston.transports.Console({
         format: winston.format.combine(
             winston.format.colorize(),
